@@ -12,6 +12,23 @@ export function isValidVideoId(id: string): boolean {
   return VIDEO_ID.test(id);
 }
 
+export function parseYouTubeVideoId(input: string): string | null {
+  const value = input.trim();
+  if (isValidVideoId(value)) return value;
+  let url: URL;
+  try { url = new URL(value); } catch { return null; }
+  const host = url.hostname.replace(/^www\./, "");
+  let id: string | null = null;
+  if (host === "youtu.be") id = url.pathname.split("/").filter(Boolean)[0] ?? null;
+  if (host === "youtube.com" || host === "m.youtube.com") {
+    if (url.pathname === "/watch") id = url.searchParams.get("v");
+    else if (url.pathname.startsWith("/shorts/") || url.pathname.startsWith("/live/")) {
+      id = url.pathname.split("/").filter(Boolean)[1] ?? null;
+    }
+  }
+  return id && isValidVideoId(id) ? id : null;
+}
+
 export function isValidChannelId(id: string): boolean {
   return /^UC[A-Za-z0-9_-]{22}$/.test(id);
 }
@@ -77,6 +94,22 @@ export async function fetchOEmbed(videoId: string): Promise<OEmbed | null> {
     authorName: (data.author_name as string) ?? null,
     authorUrl: (data.author_url as string) ?? null,
   };
+}
+
+export async function resolveOEmbedChannelId(oembed: OEmbed): Promise<string | null> {
+  if (!oembed.authorUrl) return null;
+  const direct = oembed.authorUrl.match(/\/channel\/(UC[A-Za-z0-9_-]{22})/)?.[1];
+  if (direct) return direct;
+  const response = await fetch(oembed.authorUrl, {
+    headers: { "user-agent": "Mozilla/5.0 (compatible; Tsumugi/1.0)" },
+  });
+  if (!response.ok) return null;
+  const html = await response.text();
+  return (
+    html.match(/"channelId":"(UC[A-Za-z0-9_-]{22})"/)?.[1] ??
+    html.match(/"externalId":"(UC[A-Za-z0-9_-]{22})"/)?.[1] ??
+    null
+  );
 }
 
 function decodeXml(s: string | null): string | null {

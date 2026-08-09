@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createRootPost } from "../lib/post";
 import { getBrowserAgent } from "../lib/browser-atproto";
+import type { OEmbed } from "../lib/youtube";
 
 interface SyncVideo {
   videoId: string;
@@ -20,6 +21,51 @@ export default function SyncPanel({ did }: { did: string }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState("");
+
+  const publish = async (video: SyncVideo, oembed: OEmbed | null) => {
+    const agent = await getBrowserAgent();
+    if (!agent) throw new Error("Blueskyへログインしてください");
+    const ref = await createRootPost(agent, {
+      videoId: video.videoId,
+      videoTitle: video.title,
+      origin: location.origin,
+      oembed,
+    });
+    const response = await fetch("/api/sync/record", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ videoId: video.videoId, uri: ref.uri, cid: ref.cid }),
+    });
+    const result = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      await agent.deletePost(ref.uri).catch(() => undefined);
+      throw new Error(result.error || `${video.title || video.videoId}の記録に失敗しました`);
+    }
+  };
+
+  const syncUrl = async () => {
+    if (!videoUrl.trim()) return;
+    setBusy(true);
+    setMessage("動画を確認中…");
+    try {
+      const response = await fetch("/api/sync/prepare", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ did, videoUrl }),
+      });
+      const data = await response.json() as { video?: SyncVideo; oembed?: OEmbed; error?: string };
+      if (!response.ok || !data.video) throw new Error(data.error || "動画を確認できませんでした");
+      setMessage("Blueskyへ同期中…");
+      await publish(data.video, data.oembed || null);
+      setVideoUrl("");
+      setMessage(`「${data.video.title || data.video.videoId}」を同期しました。`);
+    } catch (error) {
+      setMessage((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const check = async () => {
     setBusy(true);
@@ -47,27 +93,10 @@ export default function SyncPanel({ did }: { did: string }) {
     setBusy(true);
     setMessage(null);
     try {
-      const agent = await getBrowserAgent();
-      if (!agent) throw new Error("Blueskyへログインしてください");
       let completed = 0;
       for (const video of targets) {
         setMessage(`${targets.length}件中${completed + 1}件目を同期中…`);
-        const ref = await createRootPost(agent, {
-          videoId: video.videoId,
-          videoTitle: video.title,
-          origin: location.origin,
-          oembed: null,
-        });
-        const response = await fetch("/api/sync/record", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ videoId: video.videoId, uri: ref.uri, cid: ref.cid }),
-        });
-        const result = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          await agent.deletePost(ref.uri).catch(() => undefined);
-          throw new Error(result.error || `${video.title || video.videoId}の記録に失敗しました`);
-        }
+        await publish(video, null);
         completed++;
       }
       setMessage(`${completed}件をBlueskyへ同期しました。`);
@@ -94,13 +123,31 @@ export default function SyncPanel({ did }: { did: string }) {
         <div>
           <h2 style={{ margin: 0 }}>YouTube動画を同期</h2>
           <p className="muted small" style={{ margin: "4px 0 0" }}>
-            新着動画を確認し、選んだ動画だけをあなたのBlueskyから投稿します。
+            公開した動画のURLを貼ると、RSSを待たずにBlueskyへ投稿できます。
           </p>
         </div>
-        <button className="btn primary" onClick={check} disabled={busy}>
-          {busy ? "確認中…" : "新着動画を確認"}
+      </div>
+
+      <div className="row" style={{ marginTop: 14 }}>
+        <input
+          type="url"
+          value={videoUrl}
+          onChange={(event) => setVideoUrl(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Enter") void syncUrl(); }}
+          placeholder="https://youtu.be/VIDEO_ID"
+          aria-label="YouTube動画URL"
+          style={{ flex: 1, minWidth: 220, font: "inherit", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 8 }}
+        />
+        <button className="btn primary" onClick={syncUrl} disabled={busy || !videoUrl.trim()}>
+          {busy ? "同期中…" : "この動画を同期"}
         </button>
       </div>
+
+      <details style={{ marginTop: 16 }}>
+        <summary className="small muted" style={{ cursor: "pointer" }}>RSSから新着候補を探す</summary>
+        <button className="btn small" style={{ marginTop: 10 }} onClick={check} disabled={busy}>
+          新着動画を確認
+        </button>
 
       {channels?.map((channel) => (
         <div key={channel.channelId} style={{ marginTop: 16 }}>
@@ -121,6 +168,7 @@ export default function SyncPanel({ did }: { did: string }) {
           {busy ? "同期中…" : `${count}件をBlueskyへ同期`}
         </button>
       ) : null}
+      </details>
       {message ? <div className="notice" style={{ marginTop: 12 }}>{message}</div> : null}
     </section>
   );
