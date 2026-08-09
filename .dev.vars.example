@@ -4,7 +4,3 @@
 TSUMUGI_ORIGIN = "http://127.0.0.1:8787"
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""
-
-# Random 32+ byte secret for signing the session cookie.
-#   openssl rand -hex 32
-SESSION_SECRET = ""

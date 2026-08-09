@@ -30,30 +30,6 @@ export interface VideoRow {
 
 const now = () => new Date().toISOString();
 
-export async function upsertUser(
-  db: D1Database,
-  did: string,
-  handle: string,
-): Promise<void> {
-  await db
-    .prepare(
-      `INSERT INTO users (did, handle, created_at) VALUES (?, ?, ?)
-       ON CONFLICT(did) DO UPDATE SET handle = excluded.handle`,
-    )
-    .bind(did, handle, now())
-    .run();
-}
-
-export async function getUser(
-  db: D1Database,
-  did: string,
-): Promise<UserRow | null> {
-  return db
-    .prepare("SELECT * FROM users WHERE did = ?")
-    .bind(did)
-    .first<UserRow>();
-}
-
 export async function getVideo(
   db: D1Database,
   videoId: string,

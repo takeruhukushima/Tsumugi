@@ -27,7 +27,6 @@ src/
   lib/            browser-atproto / google / youtube / thread / post / db / session
   pages/          ページ + API + auth ルート
   components/     Comments.tsx（コメント欄）, OwnerTools.tsx（クリエイター操作）
-  middleware.ts   Cookieセッション → locals.user
 worker/           旧cron Workerを停止するための廃止済みエンドポイント
 migrations/       D1スキーマ
 ```
@@ -37,9 +36,8 @@ migrations/       D1スキーマ
 ```bash
 pnpm install
 
-# 1. アプリのCookie署名鍵を用意
+# 1. ローカル環境変数を用意
 cp .dev.vars.example .dev.vars
-openssl rand -hex 32              # 出力を .dev.vars の SESSION_SECRET へ
 # TSUMUGI_ORIGIN は http://127.0.0.1:8787（localhost ではなく loopback IP）
 
 # 2. ローカルD1にスキーマ適用
@@ -66,7 +64,6 @@ pnpm exec wrangler d1 create tsumugi
 pnpm db:remote
 
 # シークレット（リポジトリには入れない）
-pnpm exec wrangler secret put SESSION_SECRET
 pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
 
 # 本番 TSUMUGI_ORIGIN / GOOGLE_CLIENT_ID を wrangler.toml の [vars] に設定
@@ -78,9 +75,9 @@ pnpm exec wrangler deploy --config worker/wrangler.toml
 ```
 
 Bluesky OAuthは公開ブラウザクライアントとして動くため、秘密鍵もOAuthトークンも
-Workers/D1には保存しない。ログイン状態はブラウザに保存される。D1の書き込みが必要な
-操作では、ブラウザがユーザーのPDSへ短命な証明レコードを書き、サーバーが検証してから
-Tsumugi用の署名Cookieを発行する。証明レコードは検証後すぐ削除する。
+Workers/D1には保存しない。ログイン状態はブラウザだけに保存され、Tsumugi独自の
+ログインCookieも発行しない。チャンネル登録・解除時だけ、ブラウザがユーザーのPDSへ
+短命な操作証明レコードを書き、サーバーが検証する。
 
 ## 実装上の注意
 

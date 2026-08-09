@@ -7,7 +7,6 @@ import { fetchOEmbed, isValidVideoId, youtubeEmbedUrl } from "../../lib/youtube"
 
 const { videoId } = Astro.params;
 const env = Astro.locals.runtime.env;
-const user = Astro.locals.user;
 
 if (!videoId || !isValidVideoId(videoId)) {
   return new Response("動画IDが不正です", { status: 400 });
@@ -18,11 +17,7 @@ const oembed = await fetchOEmbed(videoId);
 const title = video?.title ?? oembed?.title ?? videoId;
 
 // Is the viewer the owner of this video's channel?
-let isOwner = false;
-if (user && video) {
-  const channel = await getChannel(env.DB, video.channel_id);
-  isOwner = !!channel && channel.owner_did === user.did;
-}
+const channel = video ? await getChannel(env.DB, video.channel_id) : null;
 const hasRoot = !!video?.root_uri;
 ---
 
@@ -58,7 +53,7 @@ const hasRoot = !!video?.root_uri;
     </a>
   </div>
 
-  {isOwner && (
+  {channel && (
     <div style="margin-top:16px">
       <OwnerTools
         client:only="react"
@@ -66,6 +61,7 @@ const hasRoot = !!video?.root_uri;
         videoTitle={title}
         hasRoot={hasRoot}
         rootUri={video?.root_uri ?? undefined}
+        ownerDid={channel.owner_did}
       />
     </div>
   )}

@@ -2,38 +2,23 @@ import type { APIRoute } from "astro";
 import { exchangeCode, fetchOwnedChannels } from "../../../lib/google";
 import { seedKnownVideos, upsertChannel } from "../../../lib/db";
 import { fetchChannelRss } from "../../../lib/youtube";
-import {
-  verifyValue,
-  readGoauthToken,
-  clearGoauthCookie,
-} from "../../../lib/session";
-
-interface GoauthState {
-  did: string;
-  state: string;
-  t: number;
-}
 
 // Google OAuth redirect target (spec §4.2). Confirms channel ownership, binds
 // the channel(s) to the logged-in DID, seeds existing videos, then discards the
 // access token immediately.
-export const GET: APIRoute = async ({ locals, url, request }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   const env = locals.runtime.env;
-  const secure = env.TSUMUGI_ORIGIN.startsWith("https://");
-  const fail = (msg: string, status = 400) =>
-    new Response(msg, { status, headers: { "set-cookie": clearGoauthCookie(secure) } });
+  const fail = (msg: string, status = 400) => new Response(msg, { status });
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   if (!code || !state) return fail("不正なコールバックです");
 
-  const token = readGoauthToken(request);
-  const parsed = token ? await verifyValue<GoauthState>(token, env.SESSION_SECRET) : null;
-  if (!parsed || parsed.state !== state) return fail("stateが一致しません", 403);
-  if (Date.now() - parsed.t > 600_000) return fail("セッションが失効しました", 403);
-
-  // The DID we bind channels to comes from the signed cookie, never the client.
-  const ownerDid = parsed.did;
+  const stored = await env.DB.prepare("SELECT owner_did, created_at FROM google_oauth_states WHERE state = ?").bind(state).first<{ owner_did: string; created_at: string }>();
+  await env.DB.prepare("DELETE FROM google_oauth_states WHERE state = ?").bind(state).run();
+  if (!stored) return fail("stateが一致しません", 403);
+  if (Date.now() - Date.parse(stored.created_at) > 600_000) return fail("セッションが失効しました", 403);
+  const ownerDid = stored.owner_did;
 
   let accessToken: string;
   try {
@@ -66,8 +51,5 @@ export const GET: APIRoute = async ({ locals, url, request }) => {
     }
   }
 
-  return new Response(null, {
-    status: 302,
-    headers: { location: "/settings", "set-cookie": clearGoauthCookie(secure) },
-  });
+  return new Response(null, { status: 302, headers: { location: "/settings" } });
 };

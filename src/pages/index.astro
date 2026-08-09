@@ -3,7 +3,6 @@ import Base from "../layouts/Base.astro";
 import { listAllChannels, listVideosByChannel } from "../lib/db";
 
 const env = Astro.locals.runtime.env;
-const user = Astro.locals.user;
 const channels = await listAllChannels(env.DB);
 
 // A small recent-videos strip across all channels (best-effort).
@@ -35,7 +34,7 @@ const recent = (
     </p>
     <div class="row" style="margin-top:8px">
       <a class="btn primary" href="/settings">
-        {user ? "同期を始める" : "Blueskyを接続する"}
+        Blueskyを接続する
       </a>
       <a class="btn" href="https://github.com/takeruhukushima/Tsumugi" target="_blank" rel="noreferrer">
         GitHub ↗
@@ -48,7 +47,7 @@ const recent = (
     channels.length === 0 ? (
       <p class="muted">
         まだ登録されたチャンネルはありません。
-        {user ? "あなたが最初の一人になれます。" : "ログインして登録できます。"}
+        ログインして登録できます。
       </p>
     ) : (
       <ul style="list-style:none;padding:0;margin:0">

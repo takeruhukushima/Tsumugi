@@ -7,7 +7,6 @@ interface Props {
   description?: string;
 }
 const { title = "Tsumugi", description } = Astro.props;
-const user = Astro.locals.user;
 ---
 
 <!doctype html>
@@ -27,8 +26,6 @@ const user = Astro.locals.user;
           <a href="/settings">設定</a>
           <BrowserAuth
             client:only="react"
-            serverDid={user?.did}
-            serverHandle={user?.handle}
             compact
           />
         </nav>

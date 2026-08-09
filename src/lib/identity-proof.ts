@@ -45,3 +45,20 @@ export async function readRepoRecord(uri: string) {
   return (await response.json()) as { uri: string; cid?: string; value: unknown };
 }
 
+export async function verifyActionProof(
+  uri: string,
+  action: string,
+  details: Record<string, string> = {},
+) {
+  const parsed = parseAtUri(uri);
+  if (!parsed || parsed.collection !== AUTH_COLLECTION) throw new Error("invalid proof record");
+  const record = await readRepoRecord(uri);
+  const value = record.value as Record<string, unknown>;
+  if (value.action !== action) throw new Error("action mismatch");
+  const createdAt = typeof value.createdAt === "string" ? Date.parse(value.createdAt) : NaN;
+  if (!Number.isFinite(createdAt) || Math.abs(Date.now() - createdAt) > 5 * 60_000) throw new Error("proof expired");
+  for (const [key, expected] of Object.entries(details)) {
+    if (value[key] !== expected) throw new Error(`${key} mismatch`);
+  }
+  return { did: parsed.did, record };
+}

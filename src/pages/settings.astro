@@ -1,108 +1,19 @@
 ---
 import Base from "../layouts/Base.astro";
-import SyncPanel from "../components/SyncPanel";
-import { listChannelsByOwner } from "../lib/db";
+import SettingsClient from "../components/SettingsClient";
 
-const env = Astro.locals.runtime.env;
-const user = Astro.locals.user;
-
-const channels = user ? await listChannelsByOwner(env.DB, user.did) : [];
-const googleConfigured = !!env.GOOGLE_CLIENT_ID;
+const googleConfigured = !!Astro.locals.runtime.env.GOOGLE_CLIENT_ID;
 ---
 
 <Base title="設定">
   <h1>設定</h1>
-  {
-    !user && (
-      <section class="card">
-        <h2 style="margin-top:0">Blueskyへログインしてください</h2>
-        <p class="muted small">
-          ログイン状態はこのブラウザのIndexedDBに保存されます。TsumugiのD1には
-          OAuthトークンやDPoP秘密鍵を保存しません。
-        </p>
-      </section>
-    )
-  }
-  {user && <p class="muted small">ログイン中: @{user.handle}</p>}
-
-  {user && channels.length > 0 && <SyncPanel client:only="react" />}
-
-  <section class="card">
-    <div class="spread">
-      <div>
-        <h2 style="margin:0">チャンネルを登録</h2>
-        <p class="muted small" style="margin:4px 0 0">
-          Google でログインして、あなたが所有する YouTube チャンネルを証明します。
-          Tsumugi はアクセストークンを保存しません（所有確認のあと即破棄）。
-        </p>
-      </div>
-      {
-        user && googleConfigured ? (
-          <a class="btn primary" href="/auth/google/start">
-            Googleで所有を証明
-          </a>
-        ) : !user ? (
-          <span class="small muted">先にBlueskyへログインしてください</span>
-        ) : (
-          <span class="small muted">GOOGLE_CLIENT_ID 未設定</span>
-        )
-      }
-    </div>
-  </section>
-
-  {user && <h2>登録済みチャンネル</h2>}
-  {
-    user && channels.length === 0 ? (
-      <p class="muted">まだ登録していません。</p>
-    ) : user ? (
-      <ul style="list-style:none;padding:0;margin:0">
-        {channels.map((ch) => (
-          <li class="card">
-            <div class="spread">
-              <div style="min-width:0">
-                <a href={`/c/${ch.channel_id}`} style="font-weight:600">
-                  {ch.title ?? ch.channel_id}
-                </a>
-                <div class="small muted">{ch.channel_id}</div>
-              </div>
-              <div class="row">
-                <form
-                  method="post"
-                  action={`/api/channel/${ch.channel_id}/disconnect`}
-                  onsubmit="return confirm('登録を解除しますか？既存のコメントは各ユーザーのPDSに残ります。')"
-                >
-                  <button class="btn small danger" type="submit">
-                    登録解除
-                  </button>
-                </form>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    ) : null
-  }
+  <SettingsClient client:only="react" googleConfigured={googleConfigured} />
 
   <section class="card" style="margin-top:22px">
     <h2 style="margin-top:0">モデレーションについて</h2>
     <p class="small muted">
-      各動画のコメント欄の「誰が返信できるか」は、動画ページのクリエイター向け操作から
-      設定できます（Blueskyの threadgate を使います）。個別の返信は threadgate の
-      非表示機能で自分の場から外せます。
-    </p>
-    <p class="small muted">
-      ただし、できるのは<strong>「自分の場から外す」</strong>ことで、
-      <strong>「ネットワークから消す」</strong>ことではありません。元のポストは
-      他のBlueskyクライアントからは見えます。
-    </p>
-    <p class="small muted">
-      また、Tsumugiで書かれたコメントは公開ポストなので、書いた本人のBlueskyプロフィールの
-      「Posts &amp; replies」にも表示されます。
+      各動画のコメント欄の「誰が返信できるか」はBlueskyのthreadgateで設定します。
+      元のポストは各ユーザーのPDSに残ります。
     </p>
   </section>
-
-  <p class="small muted" style="margin-top:16px">
-    注: <code>youtube.readonly</code> は Google のセンシティブスコープです。v0は
-    テストモードで運用しており、利用は最大100ユーザーまでです。
-  </p>
 </Base>

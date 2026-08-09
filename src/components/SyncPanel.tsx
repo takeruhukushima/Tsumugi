@@ -15,7 +15,7 @@ interface SyncChannel {
   error?: string;
 }
 
-export default function SyncPanel() {
+export default function SyncPanel({ did }: { did: string }) {
   const [channels, setChannels] = useState<SyncChannel[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -25,7 +25,7 @@ export default function SyncPanel() {
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/sync", { headers: { accept: "application/json" } });
+      const response = await fetch(`/api/sync?did=${encodeURIComponent(did)}`, { headers: { accept: "application/json" } });
       const data = (await response.json()) as { channels?: SyncChannel[]; error?: string };
       if (!response.ok || !data.channels) throw new Error(data.error || "新着動画を取得できませんでした");
       setChannels(data.channels);

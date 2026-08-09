@@ -44,3 +44,34 @@ export async function signOutFromBluesky(did: string) {
   await client.revoke(did);
 }
 
+export async function createActionProof(
+  action: "register-channel" | "disconnect-channel",
+  details: Record<string, string> = {},
+) {
+  const agent = await getBrowserAgent();
+  if (!agent) throw new Error("Blueskyへログインしてください");
+  const did = agent.did;
+  if (!did) throw new Error("BlueskyのDIDを取得できませんでした");
+  const created = await agent.com.atproto.repo.createRecord({
+    repo: did,
+    collection: AUTH_COLLECTION,
+    record: {
+      $type: AUTH_COLLECTION,
+      action,
+      ...details,
+      createdAt: new Date().toISOString(),
+    },
+  });
+  return {
+    agent,
+    did,
+    uri: created.data.uri,
+    async remove() {
+      await agent.com.atproto.repo.deleteRecord({
+        repo: did,
+        collection: AUTH_COLLECTION,
+        rkey: created.data.uri.split("/").at(-1)!,
+      }).catch(() => undefined);
+    },
+  };
+}

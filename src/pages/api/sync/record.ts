@@ -5,8 +5,6 @@ import { readRepoRecord } from "../../../lib/identity-proof";
 import { isValidVideoId } from "../../../lib/youtube";
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  const user = locals.user;
-  if (!user) return json({ error: "ログインが必要です" }, 401);
   const body = (await request.json().catch(() => null)) as
     | { videoId?: string; uri?: string; cid?: string }
     | null;
@@ -18,14 +16,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (!video) return json({ error: "動画が登録されていません" }, 404);
   if (video.root_uri) return json({ error: "すでに同期済みです" }, 409);
   const channel = await getChannel(locals.runtime.env.DB, video.channel_id);
-  if (!channel || channel.owner_did !== user.did) {
-    return json({ error: "この動画の所有者ではありません" }, 403);
-  }
+  if (!channel) return json({ error: "チャンネルが登録されていません" }, 404);
 
   const parsed = parseAtUri(body.uri);
   if (
     !parsed ||
-    parsed.did !== user.did ||
+    parsed.did !== channel.owner_did ||
     parsed.collection !== "app.bsky.feed.post"
   ) {
     return json({ error: "Bluesky投稿の作成者が一致しません" }, 403);
@@ -53,4 +49,3 @@ function json(body: unknown, status = 200) {
     headers: { "content-type": "application/json", "cache-control": "no-store" },
   });
 }
-

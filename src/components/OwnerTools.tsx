@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createRootPost } from "../lib/post";
 import { getBrowserAgent } from "../lib/browser-atproto";
 import { setThreadgate } from "../lib/moderation";
@@ -20,13 +20,21 @@ interface Props {
   videoTitle: string;
   hasRoot: boolean;
   rootUri?: string;
+  ownerDid: string;
 }
 
-export default function OwnerTools({ videoId, videoTitle, hasRoot, rootUri }: Props) {
+export default function OwnerTools({ videoId, videoTitle, hasRoot, rootUri, ownerDid }: Props) {
+  const [isOwner, setIsOwner] = useState(false);
   const [open, setOpen] = useState(hasRoot);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [rule, setRule] = useState<Rule>("everyone");
+
+  useEffect(() => {
+    void getBrowserAgent().then(agent => setIsOwner(agent?.did === ownerDid)).catch(() => setIsOwner(false));
+  }, [ownerDid]);
+
+  if (!isOwner) return null;
 
   const createThread = async () => {
     setBusy(true);

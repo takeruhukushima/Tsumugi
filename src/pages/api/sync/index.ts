@@ -7,11 +7,11 @@ import {
 } from "../../../lib/db";
 import { fetchChannelRss } from "../../../lib/youtube";
 
-export const GET: APIRoute = async ({ locals }) => {
-  const user = locals.user;
-  if (!user) return json({ error: "ログインが必要です" }, 401);
+export const GET: APIRoute = async ({ locals, url }) => {
+  const did = url.searchParams.get("did");
+  if (!did || !/^did:(plc|web):/.test(did)) return json({ error: "DIDが不正です" }, 400);
 
-  const channels = await listChannelsByOwner(locals.runtime.env.DB, user.did);
+  const channels = await listChannelsByOwner(locals.runtime.env.DB, did);
   const result: Array<{
     channelId: string;
     channelTitle: string | null;
@@ -52,4 +52,3 @@ function json(body: unknown, status = 200) {
     headers: { "content-type": "application/json", "cache-control": "no-store" },
   });
 }
-

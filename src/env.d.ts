@@ -8,15 +8,11 @@ interface TsumugiEnv {
   TSUMUGI_ORIGIN: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
-  SESSION_SECRET: string;
   ASSETS?: unknown;
 }
 
 type Runtime = import("@astrojs/cloudflare").Runtime<TsumugiEnv>;
 
 declare namespace App {
-  interface Locals extends Runtime {
-    /** DID of the logged-in Bluesky user, or null. Set by middleware. */
-    user: { did: string; handle: string } | null;
-  }
+  interface Locals extends Runtime {}
 }
