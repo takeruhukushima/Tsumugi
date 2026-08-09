@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { exchangeCode, fetchOwnedChannels } from "../../../lib/google";
-import { seedKnownVideos, upsertChannel } from "../../../lib/db";
+import { seedKnownVideos, upsertChannel, upsertUser } from "../../../lib/db";
 import { fetchChannelRss } from "../../../lib/youtube";
 
 // Google OAuth redirect target (spec §4.2). Confirms channel ownership, binds
@@ -19,6 +19,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
   if (!stored) return fail("stateが一致しません", 403);
   if (Date.now() - Date.parse(stored.created_at) > 600_000) return fail("セッションが失効しました", 403);
   const ownerDid = stored.owner_did;
+
+  // channels.owner_did has a foreign key to users.did. This is public identity
+  // metadata only; OAuth sessions and tokens remain exclusively in the browser.
+  await upsertUser(env.DB, ownerDid, ownerDid);
 
   let accessToken: string;
   try {

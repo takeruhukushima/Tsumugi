@@ -30,6 +30,22 @@ export interface VideoRow {
 
 const now = () => new Date().toISOString();
 
+/** Ensure the public DID referenced by channels exists. This stores no OAuth
+ * session, token, key, or cookie data. */
+export async function upsertUser(
+  db: D1Database,
+  did: string,
+  handle: string,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO users (did, handle, created_at) VALUES (?, ?, ?)
+       ON CONFLICT(did) DO UPDATE SET handle = excluded.handle`,
+    )
+    .bind(did, handle, now())
+    .run();
+}
+
 export async function getVideo(
   db: D1Database,
   videoId: string,
