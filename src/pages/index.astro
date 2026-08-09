@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import HomeConnect from "../components/HomeConnect";
 import { listAllChannels, listVideosByChannel } from "../lib/db";
 
 const env = Astro.locals.runtime.env;
@@ -33,9 +34,7 @@ const recent = (
       Tsumugi が消えてもコメントは消えません。Tsumugi は<strong>ビューであって、器ではない</strong>。
     </p>
     <div class="row" style="margin-top:8px">
-      <a class="btn primary" href="/settings">
-        Blueskyを接続する
-      </a>
+      <HomeConnect client:only="react" />
       <a class="btn" href="https://github.com/takeruhukushima/Tsumugi" target="_blank" rel="noreferrer">
         GitHub ↗
       </a>

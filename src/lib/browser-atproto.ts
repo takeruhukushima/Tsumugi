@@ -9,7 +9,9 @@ let initPromise: ReturnType<BrowserOAuthClient["init"]> | undefined;
 
 export function getBrowserOAuthClient() {
   clientPromise ??= Promise.resolve(
-    location.hostname === "127.0.0.1" || location.hostname === "[::1]"
+    location.hostname === "localhost" ||
+      location.hostname === "127.0.0.1" ||
+      location.hostname === "[::1]"
       ? new BrowserOAuthClient({
           clientMetadata: undefined,
           handleResolver: "https://bsky.social",
