@@ -9,7 +9,6 @@ interface TsumugiEnv {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   SESSION_SECRET: string;
-  ATP_PRIVATE_JWK: string;
   ASSETS?: unknown;
 }
 

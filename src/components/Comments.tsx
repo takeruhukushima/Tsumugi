@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createReply } from "../lib/post";
+import { getBrowserAgent, initBrowserSession, signInWithBluesky } from "../lib/browser-atproto";
 
 // The comment section island (spec §8). Data comes from /api/thread; writes go
-// through /api/comment, which lands the reply in the viewer's own PDS.
+// directly through the browser OAuth session, so the reply lands in the
+// viewer's own PDS without sending OAuth tokens through Tsumugi.
 
 interface CommentView {
   uri: string;
@@ -29,17 +32,16 @@ interface ThreadResponse {
 
 interface Props {
   videoId: string;
-  isLoggedIn: boolean;
-  loginHref: string;
 }
 
 const DISCLOSURE_KEY = "tsumugi_disclosed_public";
 
-export default function Comments({ videoId, isLoggedIn, loginHref }: Props) {
+export default function Comments({ videoId }: Props) {
   const [data, setData] = useState<ThreadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<CommentView | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -54,6 +56,7 @@ export default function Comments({ videoId, isLoggedIn, loginHref }: Props) {
 
   useEffect(() => {
     void load();
+    void initBrowserSession().then((session) => setIsLoggedIn(!!session));
   }, [load]);
 
   const startReply = (c: CommentView) => {
@@ -94,9 +97,9 @@ export default function Comments({ videoId, isLoggedIn, loginHref }: Props) {
       {data?.hasRoot ? (
         <div ref={formRef}>
           <CommentComposer
-            videoId={videoId}
             isLoggedIn={isLoggedIn}
-            loginHref={loginHref}
+            rootUri={data.rootUri!}
+            rootCid={data.rootCid!}
             replyTo={replyTo}
             onCancelReply={() => setReplyTo(null)}
             onPosted={async () => {
@@ -213,16 +216,16 @@ function Comment({
 }
 
 function CommentComposer({
-  videoId,
   isLoggedIn,
-  loginHref,
+  rootUri,
+  rootCid,
   replyTo,
   onCancelReply,
   onPosted,
 }: {
-  videoId: string;
   isLoggedIn: boolean;
-  loginHref: string;
+  rootUri: string;
+  rootCid: string;
   replyTo: CommentView | null;
   onCancelReply: () => void;
   onPosted: () => void | Promise<void>;
@@ -234,7 +237,11 @@ function CommentComposer({
   if (!isLoggedIn) {
     return (
       <div className="notice" style={{ marginTop: 8 }}>
-        コメントするには <a href={loginHref}>Blueskyでログイン</a>。
+        コメントするには{" "}
+        <button className="btn small" onClick={() => void signInWithBluesky()}>
+          Blueskyでログイン
+        </button>
+        。
         書いたコメントは公開ポストとして、あなたのBlueskyプロフィールにも表示されます。
       </div>
     );
@@ -256,18 +263,15 @@ function CommentComposer({
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch("/api/comment", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          videoId,
-          text: body,
-          parentUri: replyTo?.uri,
-          parentCid: replyTo?.cid,
-        }),
+      const agent = await getBrowserAgent();
+      if (!agent) throw new Error("Blueskyへログインしてください");
+      await createReply(agent, {
+        text: body,
+        root: { uri: rootUri, cid: rootCid },
+        parent: replyTo
+          ? { uri: replyTo.uri, cid: replyTo.cid }
+          : { uri: rootUri, cid: rootCid },
       });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? `error ${res.status}`);
       setText("");
       await onPosted();
     } catch (e) {

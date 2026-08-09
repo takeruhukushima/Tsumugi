@@ -2,8 +2,8 @@ import type { APIRoute } from "astro";
 import { googleAuthUrl } from "../../../lib/google";
 import { signValue, goauthCookie } from "../../../lib/session";
 
-// Begin channel-ownership verification (spec §4.2). Must be logged in with
-// Bluesky first — we bind the Google flow to that DID.
+// Begin channel-ownership verification. The server session contains only the
+// DID proven by the browser through a short-lived repo challenge.
 export const GET: APIRoute = async ({ locals }) => {
   const user = locals.user;
   if (!user) return new Response("ログインが必要です", { status: 401 });

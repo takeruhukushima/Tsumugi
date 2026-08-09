@@ -26,4 +26,3 @@ GOOGLE_CLIENT_ID = ""
 # Secrets — set with `wrangler secret put <NAME>`, never commit:
 #   GOOGLE_CLIENT_SECRET
 #   SESSION_SECRET
-#   ATP_PRIVATE_JWK

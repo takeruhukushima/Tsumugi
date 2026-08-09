@@ -1,21 +1,31 @@
 ---
 import Base from "../layouts/Base.astro";
+import SyncPanel from "../components/SyncPanel";
 import { listChannelsByOwner } from "../lib/db";
 
 const env = Astro.locals.runtime.env;
 const user = Astro.locals.user;
 
-if (!user) {
-  return Astro.redirect("/auth/bsky/login");
-}
-
-const channels = await listChannelsByOwner(env.DB, user.did);
+const channels = user ? await listChannelsByOwner(env.DB, user.did) : [];
 const googleConfigured = !!env.GOOGLE_CLIENT_ID;
 ---
 
 <Base title="設定">
   <h1>設定</h1>
-  <p class="muted small">ログイン中: @{user.handle}</p>
+  {
+    !user && (
+      <section class="card">
+        <h2 style="margin-top:0">Blueskyへログインしてください</h2>
+        <p class="muted small">
+          ログイン状態はこのブラウザのIndexedDBに保存されます。TsumugiのD1には
+          OAuthトークンやDPoP秘密鍵を保存しません。
+        </p>
+      </section>
+    )
+  }
+  {user && <p class="muted small">ログイン中: @{user.handle}</p>}
+
+  {user && channels.length > 0 && <SyncPanel client:only="react" />}
 
   <section class="card">
     <div class="spread">
@@ -27,10 +37,12 @@ const googleConfigured = !!env.GOOGLE_CLIENT_ID;
         </p>
       </div>
       {
-        googleConfigured ? (
+        user && googleConfigured ? (
           <a class="btn primary" href="/auth/google/start">
             Googleで所有を証明
           </a>
+        ) : !user ? (
+          <span class="small muted">先にBlueskyへログインしてください</span>
         ) : (
           <span class="small muted">GOOGLE_CLIENT_ID 未設定</span>
         )
@@ -38,11 +50,11 @@ const googleConfigured = !!env.GOOGLE_CLIENT_ID;
     </div>
   </section>
 
-  <h2>登録済みチャンネル</h2>
+  {user && <h2>登録済みチャンネル</h2>}
   {
-    channels.length === 0 ? (
+    user && channels.length === 0 ? (
       <p class="muted">まだ登録していません。</p>
-    ) : (
+    ) : user ? (
       <ul style="list-style:none;padding:0;margin:0">
         {channels.map((ch) => (
           <li class="card">
@@ -54,12 +66,6 @@ const googleConfigured = !!env.GOOGLE_CLIENT_ID;
                 <div class="small muted">{ch.channel_id}</div>
               </div>
               <div class="row">
-                <form method="post" action={`/api/channel/${ch.channel_id}/autopost`}>
-                  <input type="hidden" name="enabled" value={ch.auto_post ? "0" : "1"} />
-                  <button class="btn small" type="submit">
-                    自動投稿: {ch.auto_post ? "オン → オフ" : "オフ → オン"}
-                  </button>
-                </form>
                 <form
                   method="post"
                   action={`/api/channel/${ch.channel_id}/disconnect`}
@@ -74,7 +80,7 @@ const googleConfigured = !!env.GOOGLE_CLIENT_ID;
           </li>
         ))}
       </ul>
-    )
+    ) : null
   }
 
   <section class="card" style="margin-top:22px">

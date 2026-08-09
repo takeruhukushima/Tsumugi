@@ -57,12 +57,12 @@ export const GET: APIRoute = async ({ locals, url, request }) => {
 
   for (const ch of channels) {
     await upsertChannel(env.DB, ch.id, ownerDid, ch.title);
-    // Seed existing uploads so the worker only posts genuinely new ones.
+    // Seed existing uploads so the sync screen can show unposted videos.
     try {
       const rss = await fetchChannelRss(ch.id);
       await seedKnownVideos(env.DB, ch.id, rss);
     } catch {
-      /* seeding is best-effort; worker will still avoid dupes via knownVideoIds */
+      /* seeding is best-effort; the sync action refreshes RSS again */
     }
   }
 

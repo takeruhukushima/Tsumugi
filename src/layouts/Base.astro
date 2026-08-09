@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import BrowserAuth from "../components/BrowserAuth";
 
 interface Props {
   title?: string;
@@ -23,19 +24,13 @@ const user = Astro.locals.user;
       <div class="wrap">
         <a class="brand" href="/"><span class="mark">◐</span> Tsumugi</a>
         <nav class="site-nav">
-          {
-            user ? (
-              <>
-                <a href="/settings">設定</a>
-                <span class="muted small">@{user.handle}</span>
-                <form method="post" action="/auth/bsky/logout" style="display:inline">
-                  <button class="btn small" type="submit">ログアウト</button>
-                </form>
-              </>
-            ) : (
-              <a class="btn primary small" href="/auth/bsky/login">Blueskyでログイン</a>
-            )
-          }
+          <a href="/settings">設定</a>
+          <BrowserAuth
+            client:only="react"
+            serverDid={user?.did}
+            serverHandle={user?.handle}
+            compact
+          />
         </nav>
       </div>
     </header>

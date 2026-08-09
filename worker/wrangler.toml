@@ -1,19 +1,5 @@
-# Tsumugi background worker — RSS polling + auto-post (spec §5).
-# Deployed separately from the app, but bound to the SAME D1 database.
+# Legacy endpoint. Automatic posting was replaced by explicit browser sync.
 name = "tsumugi-cron"
 main = "index.ts"
 compatibility_date = "2025-08-15"
 compatibility_flags = ["nodejs_compat"]
-
-[triggers]
-crons = ["*/15 * * * *"]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "tsumugi"
-database_id = "430ba96f-d34e-4fda-ae18-f1ff20b0ef5f"
-
-[vars]
-TSUMUGI_ORIGIN = "https://tsumugi.takeruf.workers.dev"
-
-# Secret (same key as the app): wrangler secret put ATP_PRIVATE_JWK --config worker/wrangler.toml

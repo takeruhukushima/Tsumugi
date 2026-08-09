@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { createRootPost } from "../lib/post";
+import { getBrowserAgent } from "../lib/browser-atproto";
+import { setThreadgate } from "../lib/moderation";
 
 // Owner-only controls on a video page: open the comment thread on demand, and
 // set who may reply (Bluesky threadgate — spec §7).
@@ -14,10 +17,12 @@ const RULE_LABEL: Record<Rule, string> = {
 
 interface Props {
   videoId: string;
+  videoTitle: string;
   hasRoot: boolean;
+  rootUri?: string;
 }
 
-export default function OwnerTools({ videoId, hasRoot }: Props) {
+export default function OwnerTools({ videoId, videoTitle, hasRoot, rootUri }: Props) {
   const [open, setOpen] = useState(hasRoot);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -27,11 +32,24 @@ export default function OwnerTools({ videoId, hasRoot }: Props) {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch(`/api/video/${videoId}/create-thread`, {
+      const agent = await getBrowserAgent();
+      if (!agent) throw new Error("Blueskyへログインしてください");
+      const ref = await createRootPost(agent, {
+        videoId,
+        videoTitle,
+        origin: location.origin,
+        oembed: null,
+      });
+      const res = await fetch("/api/sync/record", {
         method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ videoId, uri: ref.uri, cid: ref.cid }),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? `error ${res.status}`);
+      if (!res.ok) {
+        await agent.deletePost(ref.uri).catch(() => undefined);
+        throw new Error(data.error ?? `error ${res.status}`);
+      }
       setOpen(true);
       setMsg("コメント欄を作成しました。ページを再読み込みします…");
       setTimeout(() => location.reload(), 800);
@@ -46,13 +64,10 @@ export default function OwnerTools({ videoId, hasRoot }: Props) {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/threadgate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ videoId, rule }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? `error ${res.status}`);
+      if (!rootUri) throw new Error("コメント欄がまだありません");
+      const agent = await getBrowserAgent();
+      if (!agent) throw new Error("Blueskyへログインしてください");
+      await setThreadgate(agent, rootUri, rule);
       setMsg("返信の可否を更新しました。");
     } catch (e) {
       setMsg((e as Error).message);

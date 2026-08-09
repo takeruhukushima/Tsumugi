@@ -60,16 +60,17 @@ const hasRoot = !!video?.root_uri;
 
   {isOwner && (
     <div style="margin-top:16px">
-      <OwnerTools client:load videoId={videoId} hasRoot={hasRoot} />
+      <OwnerTools
+        client:only="react"
+        videoId={videoId}
+        videoTitle={title}
+        hasRoot={hasRoot}
+        rootUri={video?.root_uri ?? undefined}
+      />
     </div>
   )}
 
   <div style="margin-top:22px">
-    <Comments
-      client:load
-      videoId={videoId}
-      isLoggedIn={!!user}
-      loginHref="/auth/bsky/login"
-    />
+    <Comments client:only="react" videoId={videoId} />
   </div>
 </Base>

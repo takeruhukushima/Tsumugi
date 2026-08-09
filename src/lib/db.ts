@@ -115,7 +115,7 @@ export async function upsertChannel(
   await db
     .prepare(
       `INSERT INTO channels (channel_id, owner_did, title, verified_at, auto_post)
-       VALUES (?, ?, ?, ?, 1)
+       VALUES (?, ?, ?, ?, 0)
        ON CONFLICT(channel_id) DO UPDATE SET
          owner_did = excluded.owner_did,
          title = excluded.title,
@@ -149,40 +149,6 @@ export async function seedKnownVideos(
   await db.batch(stmts);
 }
 
-/** Record a newly-posted video with its root thread refs (worker, spec §5). */
-export async function insertPostedVideo(
-  db: D1Database,
-  v: {
-    videoId: string;
-    channelId: string;
-    title: string | null;
-    publishedAt: string | null;
-    rootUri: string;
-    rootCid: string;
-  },
-): Promise<void> {
-  await db
-    .prepare(
-      `INSERT INTO videos
-         (video_id, channel_id, title, published_at, root_uri, root_cid, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(video_id) DO UPDATE SET
-         root_uri = excluded.root_uri,
-         root_cid = excluded.root_cid,
-         title = excluded.title`,
-    )
-    .bind(
-      v.videoId,
-      v.channelId,
-      v.title,
-      v.publishedAt,
-      v.rootUri,
-      v.rootCid,
-      now(),
-    )
-    .run();
-}
-
 /** Set/attach the root thread refs onto a video that was manually seeded
  * (spec milestone 3 — put root_uri in by hand before the worker exists). */
 export async function attachRoot(
@@ -197,33 +163,6 @@ export async function attachRoot(
     .run();
 }
 
-/** Oldest-checked auto_post channels, for the cron worker to process in batches. */
-export async function channelsDueForCheck(
-  db: D1Database,
-  limit: number,
-): Promise<ChannelRow[]> {
-  const { results } = await db
-    .prepare(
-      `SELECT * FROM channels WHERE auto_post = 1
-       ORDER BY (last_rss_check IS NOT NULL), last_rss_check ASC
-       LIMIT ?`,
-    )
-    .bind(limit)
-    .all<ChannelRow>();
-  return results ?? [];
-}
-
-export async function knownVideoIds(
-  db: D1Database,
-  channelId: string,
-): Promise<Set<string>> {
-  const { results } = await db
-    .prepare("SELECT video_id FROM videos WHERE channel_id = ?")
-    .bind(channelId)
-    .all<{ video_id: string }>();
-  return new Set((results ?? []).map((r) => r.video_id));
-}
-
 export async function markChecked(
   db: D1Database,
   channelId: string,
@@ -231,20 +170,6 @@ export async function markChecked(
   await db
     .prepare("UPDATE channels SET last_rss_check = ? WHERE channel_id = ?")
     .bind(now(), channelId)
-    .run();
-}
-
-export async function setAutoPost(
-  db: D1Database,
-  channelId: string,
-  ownerDid: string,
-  enabled: boolean,
-): Promise<void> {
-  await db
-    .prepare(
-      "UPDATE channels SET auto_post = ? WHERE channel_id = ? AND owner_did = ?",
-    )
-    .bind(enabled ? 1 : 0, channelId, ownerDid)
     .run();
 }
 
