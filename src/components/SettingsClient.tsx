@@ -34,6 +34,12 @@ export default function SettingsClient({ googleConfigured }: { googleConfigured:
 
   const register = async () => {
     setMessage(null);
+    if (!googleConfigured) {
+      setMessage(
+        "Google OAuthが未設定です。.dev.vars に GOOGLE_CLIENT_ID と GOOGLE_CLIENT_SECRET を設定して、pnpm devを再起動してください。",
+      );
+      return;
+    }
     const proof = await createActionProof("register-channel");
     try {
       const response = await fetch("/auth/google/start", {
@@ -78,8 +84,9 @@ export default function SettingsClient({ googleConfigured }: { googleConfigured:
     <section className="card">
       <div className="spread">
         <div><h2 style={{ margin: 0 }}>チャンネルを登録</h2><p className="muted small">Googleで所有するYouTubeチャンネルを証明します。</p></div>
-        {googleConfigured ? <button className="btn primary" onClick={register}>Googleで所有を証明</button> : <span className="small muted">GOOGLE_CLIENT_ID 未設定</span>}
+        <button className="btn primary" onClick={register}>YouTubeチャンネルを登録</button>
       </div>
+      {!googleConfigured ? <p className="small muted" style={{ marginBottom: 0 }}>Google OAuthの設定が必要です。</p> : null}
     </section>
     <h2>登録済みチャンネル</h2>
     {channels.length === 0 ? <p className="muted">まだ登録していません。</p> : <ul style={{ listStyle: "none", padding: 0 }}>
