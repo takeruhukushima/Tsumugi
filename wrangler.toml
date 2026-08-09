@@ -13,14 +13,14 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "tsumugi"
-database_id = "REPLACE_WITH_D1_DATABASE_ID" # `wrangler d1 create tsumugi`
+database_id = "430ba96f-d34e-4fda-ae18-f1ff20b0ef5f"
 migrations_dir = "migrations"
 
 [vars]
 # Public origin of the deployment. Locally use http://127.0.0.1:4321 (astro dev)
 # or http://127.0.0.1:8788 (wrangler dev). NOT localhost — atproto loopback
 # clients require the 127.0.0.1 loopback IP.
-TSUMUGI_ORIGIN = "https://tsumugi.example"
+TSUMUGI_ORIGIN = "https://tsumugi.takeruf.workers.dev"
 GOOGLE_CLIENT_ID = ""
 
 # Secrets — set with `wrangler secret put <NAME>`, never commit:
