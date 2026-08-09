@@ -1,0 +1,31 @@
+# deps
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# cloudflare / wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# local sqlite from miniflare
+*.sqlite
+*.sqlite-*
+
+# secrets / keys — never commit
+*.jwk
+*.pem
+secrets/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# logs
+*.log
+npm-debug.log*

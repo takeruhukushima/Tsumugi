@@ -1,0 +1,76 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getChannel, listVideosByChannel } from "../../lib/db";
+import { isValidChannelId } from "../../lib/youtube";
+
+const { channelId } = Astro.params;
+const env = Astro.locals.runtime.env;
+
+if (!channelId || !isValidChannelId(channelId)) {
+  return new Response("チャンネルIDが不正です", { status: 400 });
+}
+
+const channel = await getChannel(env.DB, channelId);
+if (!channel) {
+  return new Response("チャンネルが見つかりません", { status: 404 });
+}
+
+const videos = await listVideosByChannel(env.DB, channelId);
+const withThread = videos.filter((v) => v.root_uri);
+const pending = videos.filter((v) => !v.root_uri);
+---
+
+<Base title={channel.title ?? channelId}>
+  <section class="card">
+    <h1 style="margin:0">{channel.title ?? channelId}</h1>
+    <div class="small muted">{channelId}</div>
+    <div class="small muted" style="margin-top:6px">
+      自動投稿: {channel.auto_post ? "オン" : "オフ"}
+    </div>
+  </section>
+
+  <h2>コメント欄のある動画</h2>
+  {
+    withThread.length === 0 ? (
+      <p class="muted">まだコメント欄が開かれた動画はありません。</p>
+    ) : (
+      <ul style="list-style:none;padding:0;margin:0">
+        {withThread.map((v) => (
+          <li class="card spread">
+            <div style="min-width:0">
+              <a href={`/v/${v.video_id}`} style="font-weight:600">
+                {v.title ?? v.video_id}
+              </a>
+              {v.published_at && (
+                <div class="small muted">
+                  {new Date(v.published_at).toLocaleDateString("ja-JP")}
+                </div>
+              )}
+            </div>
+            <a class="small" href={`/v/${v.video_id}`}>
+              開く →
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    pending.length > 0 && (
+      <details style="margin-top:18px">
+        <summary class="muted small">
+          コメント欄が未作成の動画（{pending.length}）
+        </summary>
+        <ul style="list-style:none;padding:0;margin:10px 0 0">
+          {pending.slice(0, 30).map((v) => (
+            <li class="card spread">
+              <a href={`/v/${v.video_id}`}>{v.title ?? v.video_id}</a>
+              <span class="small muted">未作成</span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )
+  }
+</Base>

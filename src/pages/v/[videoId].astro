@@ -1,0 +1,75 @@
+---
+import Base from "../../layouts/Base.astro";
+import Comments from "../../components/Comments.tsx";
+import OwnerTools from "../../components/OwnerTools.tsx";
+import { getVideo, getChannel } from "../../lib/db";
+import { fetchOEmbed, isValidVideoId, youtubeEmbedUrl } from "../../lib/youtube";
+
+const { videoId } = Astro.params;
+const env = Astro.locals.runtime.env;
+const user = Astro.locals.user;
+
+if (!videoId || !isValidVideoId(videoId)) {
+  return new Response("動画IDが不正です", { status: 400 });
+}
+
+const video = await getVideo(env.DB, videoId);
+const oembed = await fetchOEmbed(videoId);
+const title = video?.title ?? oembed?.title ?? videoId;
+
+// Is the viewer the owner of this video's channel?
+let isOwner = false;
+if (user && video) {
+  const channel = await getChannel(env.DB, video.channel_id);
+  isOwner = !!channel && channel.owner_did === user.did;
+}
+const hasRoot = !!video?.root_uri;
+---
+
+<Base title={title} description={`${title} — Blueskyアカウントで書けるコメント欄`}>
+  <div class="player">
+    <iframe
+      src={youtubeEmbedUrl(videoId)}
+      title={title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      loading="lazy"></iframe>
+  </div>
+
+  <div class="spread" style="margin-top:14px">
+    <div style="min-width:0">
+      <h1 style="font-size:1.25rem;margin:0">{title}</h1>
+      {
+        oembed?.authorName && (
+          <div class="small muted">
+            {oembed.authorUrl ? (
+              <a href={oembed.authorUrl} target="_blank" rel="noreferrer">
+                {oembed.authorName}
+              </a>
+            ) : (
+              oembed.authorName
+            )}
+          </div>
+        )
+      }
+    </div>
+    <a class="btn small" href={`https://youtu.be/${videoId}`} target="_blank" rel="noreferrer">
+      YouTubeで見る ↗
+    </a>
+  </div>
+
+  {isOwner && (
+    <div style="margin-top:16px">
+      <OwnerTools client:load videoId={videoId} hasRoot={hasRoot} />
+    </div>
+  )}
+
+  <div style="margin-top:22px">
+    <Comments
+      client:load
+      videoId={videoId}
+      isLoggedIn={!!user}
+      loginHref="/auth/bsky/login"
+    />
+  </div>
+</Base>

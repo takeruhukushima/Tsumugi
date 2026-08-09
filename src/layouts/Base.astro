@@ -1,0 +1,53 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title = "Tsumugi", description } = Astro.props;
+const user = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title === "Tsumugi" ? title : `${title} — Tsumugi`}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%97%90%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="/"><span class="mark">◐</span> Tsumugi</a>
+        <nav class="site-nav">
+          {
+            user ? (
+              <>
+                <a href="/settings">設定</a>
+                <span class="muted small">@{user.handle}</span>
+                <form method="post" action="/auth/bsky/logout" style="display:inline">
+                  <button class="btn small" type="submit">ログアウト</button>
+                </form>
+              </>
+            ) : (
+              <a class="btn primary small" href="/auth/bsky/login">Blueskyでログイン</a>
+            )
+          }
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="wrap">
+        <slot />
+      </div>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        Tsumugi はビューであって、器ではない。コメントはあなたのPDSに残ります。
+      </div>
+    </footer>
+  </body>
+</html>

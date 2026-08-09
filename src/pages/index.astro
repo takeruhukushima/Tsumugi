@@ -1,0 +1,102 @@
+---
+import Base from "../layouts/Base.astro";
+import { listAllChannels, listVideosByChannel } from "../lib/db";
+
+const env = Astro.locals.runtime.env;
+const user = Astro.locals.user;
+const channels = await listAllChannels(env.DB);
+
+// A small recent-videos strip across all channels (best-effort).
+const recent = (
+  await Promise.all(
+    channels.slice(0, 6).map(async (ch) => {
+      const vids = (await listVideosByChannel(env.DB, ch.channel_id)).filter(
+        (v) => v.root_uri,
+      );
+      return vids.slice(0, 2).map((v) => ({ ...v, channelTitle: ch.title }));
+    }),
+  )
+).flat();
+---
+
+<Base
+  title="Tsumugi"
+  description="YouTube動画に、Blueskyアカウントで書けるコメント欄を付ける。コメントはあなたのPDSに残ります。"
+>
+  <section class="card">
+    <h1>YouTubeに、あなたのアカウントで書けるコメント欄を。</h1>
+    <p class="muted">
+      Tsumugi は、YouTube動画に Bluesky アカウントで書けるコメント欄を付けます。
+      コメントは Tsumugi のデータベースには入りません。あなた自身の PDS に
+      <code>app.bsky.feed.post</code> として残り、Bluesky 上でもそのまま見えます。
+    </p>
+    <p class="muted small">
+      Tsumugi が消えてもコメントは消えません。Tsumugi は<strong>ビューであって、器ではない</strong>。
+    </p>
+    <div class="row" style="margin-top:8px">
+      {
+        user ? (
+          <a class="btn primary" href="/settings">
+            チャンネルを登録する
+          </a>
+        ) : (
+          <a class="btn primary" href="/auth/bsky/login">
+            Blueskyでログイン
+          </a>
+        )
+      }
+      <a class="btn" href="https://github.com/takeruhukushima/Tsumugi" target="_blank" rel="noreferrer">
+        GitHub ↗
+      </a>
+    </div>
+  </section>
+
+  <h2>登録チャンネル</h2>
+  {
+    channels.length === 0 ? (
+      <p class="muted">
+        まだ登録されたチャンネルはありません。
+        {user ? "あなたが最初の一人になれます。" : "ログインして登録できます。"}
+      </p>
+    ) : (
+      <ul style="list-style:none;padding:0;margin:0">
+        {channels.map((ch) => (
+          <li class="card spread">
+            <div>
+              <a href={`/c/${ch.channel_id}`} style="font-weight:600">
+                {ch.title ?? ch.channel_id}
+              </a>
+              <div class="small muted">{ch.channel_id}</div>
+            </div>
+            <a class="small" href={`/c/${ch.channel_id}`}>
+              動画一覧 →
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    recent.length > 0 && (
+      <>
+        <h2>最近コメント欄が開いた動画</h2>
+        <ul style="list-style:none;padding:0;margin:0">
+          {recent.map((v) => (
+            <li class="card spread">
+              <div style="min-width:0">
+                <a href={`/v/${v.video_id}`} style="font-weight:600">
+                  {v.title ?? v.video_id}
+                </a>
+                <div class="small muted">{v.channelTitle}</div>
+              </div>
+              <a class="small" href={`/v/${v.video_id}`}>
+                開く →
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+</Base>

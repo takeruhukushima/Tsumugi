@@ -1,0 +1,44 @@
+{
+  "name": "tsumugi",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "YouTube動画に、Blueskyアカウントで書けるコメント欄を付ける。コメントは各ユーザーのPDSに残る。",
+  "packageManager": "pnpm@10.29.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp"
+    ]
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "check": "astro check",
+    "db:local": "wrangler d1 migrations apply tsumugi --local",
+    "db:remote": "wrangler d1 migrations apply tsumugi --remote",
+    "worker:dev": "wrangler dev --config worker/wrangler.toml",
+    "worker:deploy": "wrangler deploy --config worker/wrangler.toml"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.0",
+    "@astrojs/react": "^4.3.0",
+    "@atproto/api": "^0.15.0",
+    "@atproto/jwk-jose": "^0.1.9",
+    "@atproto/oauth-client-node": "^0.3.0",
+    "astro": "^5.13.0",
+    "jose": "^5.9.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^4.20250801.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.28.0"
+  }
+}

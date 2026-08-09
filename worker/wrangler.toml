@@ -1,0 +1,19 @@
+# Tsumugi background worker — RSS polling + auto-post (spec §5).
+# Deployed separately from the app, but bound to the SAME D1 database.
+name = "tsumugi-cron"
+main = "index.ts"
+compatibility_date = "2025-08-15"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tsumugi"
+database_id = "REPLACE_WITH_D1_DATABASE_ID" # same id as ../wrangler.toml
+
+[vars]
+TSUMUGI_ORIGIN = "https://tsumugi.example"
+
+# Secret (same key as the app): wrangler secret put ATP_PRIVATE_JWK --config worker/wrangler.toml
