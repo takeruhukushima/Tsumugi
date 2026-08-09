@@ -8,12 +8,14 @@ let clientPromise: Promise<BrowserOAuthClient> | undefined;
 let initPromise: ReturnType<BrowserOAuthClient["init"]> | undefined;
 
 export function getBrowserOAuthClient() {
-  clientPromise ??= Promise.resolve(
+  const loopback =
     location.hostname === "localhost" ||
-      location.hostname === "127.0.0.1" ||
-      location.hostname === "[::1]"
-      ? new BrowserOAuthClient({
-          clientMetadata: undefined,
+    location.hostname === "127.0.0.1" ||
+    location.hostname === "[::1]";
+  clientPromise ??= Promise.resolve(
+    loopback
+      ? BrowserOAuthClient.load({
+          clientId: loopbackClientId(),
           handleResolver: "https://bsky.social",
         })
       : BrowserOAuthClient.load({
@@ -22,6 +24,13 @@ export function getBrowserOAuthClient() {
         }),
   );
   return clientPromise;
+}
+
+function loopbackClientId() {
+  const host = location.hostname === "[::1]" ? "[::1]" : "127.0.0.1";
+  const redirectUri = `http://${host}${location.port ? `:${location.port}` : ""}${location.pathname}`;
+  const params = new URLSearchParams({ scope: ATP_SCOPE, redirect_uri: redirectUri });
+  return `http://localhost?${params.toString()}`;
 }
 
 export async function initBrowserSession() {
