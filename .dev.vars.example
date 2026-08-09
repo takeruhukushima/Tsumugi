@@ -1,6 +1,6 @@
 # Copy to `.dev.vars` for local `wrangler dev` / `astro dev` (platformProxy).
 # `.dev.vars` is gitignored. Do NOT commit real secrets.
 
-TSUMUGI_ORIGIN = "http://127.0.0.1:8787"
+TSUMUGI_ORIGIN = "http://127.0.0.1:4321"
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""

@@ -38,23 +38,21 @@ pnpm install
 
 # 1. ローカル環境変数を用意
 cp .dev.vars.example .dev.vars
-# TSUMUGI_ORIGIN は http://127.0.0.1:8787（localhost ではなく loopback IP）
+# TSUMUGI_ORIGIN は http://127.0.0.1:4321（localhost ではなく loopback IP）
 
 # 2. ローカルD1にスキーマ適用
 pnpm db:local
 
-# 3. ビルドして wrangler で起動（D1・環境変数つき）
-pnpm build
-pnpm exec wrangler dev --port 8787 --local
+# 3. 開発サーバーを起動（http://127.0.0.1:4321/）
+pnpm dev
 ```
 
-`astro dev`（`platformProxy` 経由でD1が使える）でも起動できるが、
-atproto OAuthのloopbackクライアントは `TSUMUGI_ORIGIN` と listen ポートの
-一致が要るため、`wrangler dev --port 8787` を推奨。
+`pnpm dev` は `platformProxy` 経由でローカルD1を使い、AT Protocolのloopback
+OAuthに必要な `127.0.0.1:4321` で待ち受ける。
 
 Googleチャンネル登録まで試すには `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 （テストモードのOAuthクライアント、リダイレクトURIに
-`http://127.0.0.1:8787/auth/google/callback`）を `.dev.vars` に設定する。
+`http://127.0.0.1:4321/auth/google/callback`）を `.dev.vars` に設定する。
 
 ## デプロイ
 
