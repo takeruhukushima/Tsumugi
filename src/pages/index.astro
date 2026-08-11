@@ -21,72 +21,158 @@ const recent = (
 
 <Base
   title="Tsumugi"
-  description="YouTube動画に、Blueskyアカウントで書けるコメント欄を付ける。コメントはあなたのPDSに残ります。"
+  description="YouTube動画のそばに、Blueskyアカウントで書けるコメント欄を。コメントはあなたのPDSに残ります。"
 >
-  <section class="card">
-    <h1>YouTubeに、あなたのアカウントで書けるコメント欄を。</h1>
-    <p class="muted">
-      Tsumugi は、YouTube動画に Bluesky アカウントで書けるコメント欄を付けます。
-      コメントは Tsumugi のデータベースには入りません。あなた自身の PDS に
-      <code>app.bsky.feed.post</code> として残り、Bluesky 上でもそのまま見えます。
-    </p>
-    <p class="muted small">
-      Tsumugi が消えてもコメントは消えません。Tsumugi は<strong>ビューであって、器ではない</strong>。
-    </p>
-    <div class="row" style="margin-top:8px">
-      <HomeConnect client:only="react" />
-      <a class="btn" href="https://github.com/takeruhukushima/Tsumugi" target="_blank" rel="noreferrer">
-        GitHub ↗
-      </a>
+  <section class="home-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">YouTube × Bluesky</p>
+      <h1>動画のそばに、<br /><span>Blueskyで続く会話を。</span></h1>
+      <p class="hero-lead">
+        Tsumugiは、YouTube動画を見ながらBlueskyアカウントで話せるコメント欄です。
+        書いた言葉はサービスに預けず、あなた自身の場所に残ります。
+      </p>
+      <div class="hero-actions">
+        <HomeConnect client:only="react" />
+        <a class="btn hero-secondary" href="#channels">ログインせずに見てみる</a>
+      </div>
+      <div class="hero-notes" aria-label="Tsumugiの特徴">
+        <span><i aria-hidden="true"></i>閲覧はログイン不要</span>
+        <span><i aria-hidden="true"></i>コメントはBlueskyにも表示</span>
+      </div>
+    </div>
+
+    <div class="thread-illustration" aria-label="YouTube動画からBlueskyの会話につながるイメージ">
+      <div class="video-window">
+        <div class="video-bar"><span></span><span></span><span></span></div>
+        <div class="video-screen">
+          <div class="play-mark" aria-hidden="true"></div>
+        </div>
+        <div class="video-lines"><strong></strong><span></span></div>
+      </div>
+      <div class="thread-line" aria-hidden="true"></div>
+      <div class="comment-bubble comment-one">
+        <span class="avatar">B</span>
+        <div><strong>Blueskyの投稿</strong><p>動画を見ながら話せる</p></div>
+      </div>
+      <div class="comment-bubble comment-two">
+        <span class="avatar warm">P</span>
+        <div><strong>あなたのPDS</strong><p>言葉はここに残る</p></div>
+      </div>
     </div>
   </section>
 
-  <h2>登録チャンネル</h2>
-  {
-    channels.length === 0 ? (
-      <p class="muted">
-        まだ登録されたチャンネルはありません。
-        ログインして登録できます。
-      </p>
-    ) : (
-      <ul style="list-style:none;padding:0;margin:0">
-        {channels.map((ch) => (
-          <li class="card spread">
-            <div>
-              <a href={`/c/${ch.channel_id}`} style="font-weight:600">
-                {ch.title ?? ch.channel_id}
-              </a>
-              <div class="small muted">{ch.channel_id}</div>
-            </div>
-            <a class="small" href={`/c/${ch.channel_id}`}>
-              動画一覧 →
-            </a>
-          </li>
-        ))}
-      </ul>
-    )
-  }
+  <section class="intro-section" id="about">
+    <div class="section-heading">
+      <p class="eyebrow">HOW IT WORKS</p>
+      <h2>いつもの動画から、会話へ。</h2>
+      <p>見るだけなら、アカウントの接続は必要ありません。</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="step-number">01</span>
+        <h3>動画を見つける</h3>
+        <p>公開中のチャンネルや、コメント欄が開いた動画から気になる一本を選びます。</p>
+      </li>
+      <li>
+        <span class="step-number">02</span>
+        <h3>Blueskyでつながる</h3>
+        <p>会話に加わるときだけログイン。Tsumugi専用のアカウントは必要ありません。</p>
+      </li>
+      <li>
+        <span class="step-number">03</span>
+        <h3>言葉を紡ぐ</h3>
+        <p>コメントはBlueskyの投稿として残り、元の投稿にもいつでも戻れます。</p>
+      </li>
+    </ol>
+  </section>
 
-  {
-    recent.length > 0 && (
-      <>
-        <h2>最近コメント欄が開いた動画</h2>
-        <ul style="list-style:none;padding:0;margin:0">
-          {recent.map((v) => (
-            <li class="card spread">
-              <div style="min-width:0">
-                <a href={`/v/${v.video_id}`} style="font-weight:600">
-                  {v.title ?? v.video_id}
-                </a>
-                <div class="small muted">{v.channelTitle}</div>
-              </div>
-              <a class="small" href={`/v/${v.video_id}`}>
-                開く →
+  <section class="principle-section">
+    <div class="principle-mark" aria-hidden="true">◐</div>
+    <div>
+      <p class="eyebrow">YOUR WORDS, YOUR PLACE</p>
+      <h2>Tsumugiは、ビューであって器ではない。</h2>
+      <p>
+        コメントはTsumugiのデータベースではなく、あなた自身のPDSに
+        Blueskyの投稿として保存されます。Tsumugiがなくなっても、書いた言葉は消えません。
+      </p>
+    </div>
+    <div class="principle-flow" aria-label="コメントの保存先">
+      <span>Tsumugiで書く</span><b aria-hidden="true">→</b><span>Blueskyに投稿</span><b aria-hidden="true">→</b><strong>あなたのPDS</strong>
+    </div>
+  </section>
+
+  <section class="public-section" id="channels">
+    <div class="section-heading heading-row">
+      <div>
+        <p class="eyebrow">OPEN CHANNELS</p>
+        <h2>いま開かれている場所</h2>
+        <p>ここから先はログインせずに見ることができます。</p>
+      </div>
+      <span class="count-label">{channels.length} チャンネル</span>
+    </div>
+
+    {
+      channels.length === 0 ? (
+        <div class="empty-state">
+          <p>まだ登録されたチャンネルはありません。</p>
+          <a href="/settings">最初のチャンネルを登録する →</a>
+        </div>
+      ) : (
+        <ul class="channel-grid">
+          {channels.map((ch) => (
+            <li>
+              <a class="channel-card" href={`/c/${ch.channel_id}`}>
+                <span class="channel-mark" aria-hidden="true">◐</span>
+                <span class="channel-name">
+                  <strong>{ch.title ?? ch.channel_id}</strong>
+                  <small>{ch.channel_id}</small>
+                </span>
+                <span class="card-arrow" aria-hidden="true">→</span>
               </a>
             </li>
           ))}
         </ul>
-      </>
+      )
+    }
+  </section>
+
+  {
+    recent.length > 0 && (
+      <section class="recent-section">
+        <div class="section-heading heading-row">
+          <div>
+            <p class="eyebrow">RECENT THREADS</p>
+            <h2>最近コメント欄が開いた動画</h2>
+          </div>
+          <span class="count-label">{recent.length} 本</span>
+        </div>
+        <ul class="video-list">
+          {recent.map((v) => (
+            <li>
+              <a href={`/v/${v.video_id}`}>
+                <span class="video-index" aria-hidden="true">▶</span>
+                <span class="video-name">
+                  <strong>{v.title ?? v.video_id}</strong>
+                  <small>{v.channelTitle}</small>
+                </span>
+                <span class="card-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     )
   }
+
+  <section class="creator-cta">
+    <div>
+      <p class="eyebrow">FOR CREATORS</p>
+      <h2>あなたの動画にも、会話の場所を。</h2>
+      <p>Blueskyでログインし、GoogleでYouTubeチャンネルの所有を確認したら準備完了です。</p>
+    </div>
+    <div class="creator-action">
+      <a class="btn primary" href="/settings">チャンネルを登録する</a>
+      <span>Blueskyログイン → 所有確認 → 動画を選択</span>
+    </div>
+  </section>
 </Base>

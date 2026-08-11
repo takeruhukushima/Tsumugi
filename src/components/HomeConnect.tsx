@@ -21,9 +21,9 @@ export default function HomeConnect() {
     catch (cause) { setError((cause as Error).message); setBusy(false); }
   };
 
-  return <div>
+  return <div className="home-connect">
     <button className="btn primary" onClick={connect} disabled={busy}>
-      {busy ? "確認中…" : loggedIn ? "同期を始める" : "Blueskyに接続"}
+      {busy ? "確認中…" : loggedIn ? "チャンネル管理へ" : "Blueskyでログインして始める"}
     </button>
     {error ? <div className="small" style={{ color: "var(--danger)", marginTop: 6 }}>{error}</div> : null}
   </div>;
