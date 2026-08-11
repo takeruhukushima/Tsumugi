@@ -23,6 +23,7 @@ const { title = "Tsumugi", description } = Astro.props;
       <div class="wrap">
         <a class="brand" href="/"><span class="mark">◐</span> Tsumugi</a>
         <nav class="site-nav">
+          <a href="/#channels">チャンネルを探す</a>
           <a href="/settings">設定</a>
           <BrowserAuth
             client:only="react"
@@ -38,7 +39,10 @@ const { title = "Tsumugi", description } = Astro.props;
     </main>
     <footer class="site">
       <div class="wrap">
-        Tsumugi はビューであって、器ではない。コメントはあなたのPDSに残ります。
+        <span>Tsumugi はビューであって、器ではない。コメントはあなたのPDSに残ります。</span>
+        <a href="https://github.com/takeruhukushima/Tsumugi" target="_blank" rel="noreferrer">
+          GitHub
+        </a>
       </div>
     </footer>
   </body>
